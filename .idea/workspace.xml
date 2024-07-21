@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1e2c4c30-5f2c-4854-8903-91386fe7bf14" name="Changes" comment="db-connection" />
+    <list default="true" id="1e2c4c30-5f2c-4854-8903-91386fe7bf14" name="Changes" comment="jooq query builder">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -25,30 +28,38 @@
   &quot;associatedIndex&quot;: 1
 }</component>
   <component name="ProjectId" id="2iVWL63afZQ52x7lR2Mxv2eQevE" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "/Users/mac/Documents/polyglot-prime/hub-prime/src/test/java/lib/aide/tabular",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/mac/Documents/polyglot-prime&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
-      "PLAIN_TEXT"
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;PLAIN_TEXT&quot;
     ]
   }
-}]]></component>
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/hub-prime/src/test/java/lib/aide/tabular" />
+      <recent name="$PROJECT_DIR$/hub-prime/src/main/java/lib/aide/tabular/sql" />
+    </key>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -61,7 +72,11 @@
       <workItem from="1719835003338" duration="11445000" />
       <workItem from="1721006773846" duration="7000" />
       <workItem from="1721006809353" duration="5237000" />
-      <workItem from="1721318126887" duration="1362000" />
+      <workItem from="1721318126887" duration="2441000" />
+      <workItem from="1721394802933" duration="320000" />
+      <workItem from="1721395164743" duration="38000" />
+      <workItem from="1721399818096" duration="37000" />
+      <workItem from="1721399880344" duration="196000" />
     </task>
     <task id="LOCAL-00001" summary="db-connection">
       <option name="closed" value="true" />
@@ -71,7 +86,15 @@
       <option name="project" value="LOCAL" />
       <updated>1719870866051</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="jooq query builder">
+      <option name="closed" value="true" />
+      <created>1721334327488</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1721334327488</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -79,6 +102,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="db-connection" />
-    <option name="LAST_COMMIT_MESSAGE" value="db-connection" />
+    <MESSAGE value="jooq query builder" />
+    <option name="LAST_COMMIT_MESSAGE" value="jooq query builder" />
   </component>
 </project>

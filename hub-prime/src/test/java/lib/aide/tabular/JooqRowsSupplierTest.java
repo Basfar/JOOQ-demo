@@ -1,14 +1,19 @@
 package lib.aide.tabular;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.jooq.Query;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class JooqRowsSupplierTest {
     static private final ObjectMapper objectMapper = new ObjectMapper();
@@ -283,4 +288,54 @@ public class JooqRowsSupplierTest {
         assertThat(actualSQL).isEqualToIgnoringWhitespace(expectedSQL);
         assertThat(jooqQuery.bindValues()).isEqualTo(expectedParams);
     }
+
+    @Test
+    public void testSelectWithPivoting() throws Exception {
+        final var jsonRequest = """
+            {
+                "startRow": 0,
+                "endRow": 100,
+                "rowGroupCols": [],
+                "valueCols": [
+                    {"id": "country", "displayName": "Country", "field": "country", "aggFunc": null},
+                    {"id": "gold", "displayName": "Gold Medals", "field": "gold", "aggFunc": null}
+                ],
+                "pivotCols": [
+                    {"id": "sport", "displayName": "Athletics,Swimming", "field": "sport"}
+                ],
+                "pivotMode": true,
+                "groupKeys": [],
+                "filterModel": {},
+                "sortModel": [],
+                "requestContext": {},
+                "rangeSelection": [],
+                "aggregationFunctions": []
+            }
+                """;
+    
+        final var request = objectMapper.readValue(jsonRequest, TabularRowsRequest.class);
+        final var supplier = new JooqRowsSupplier.Builder()
+                .withRequest(request)
+                .withTable(DSL.table("medals"))
+                .withDSL(DSL.using(SQLDialect.POSTGRES))
+                .build();
+    
+        final var jooqQuery = supplier.query();
+        final var expectedSQL = """
+            SELECT 
+            "country", 
+            CASE WHEN "sport" = 'Athletics' THEN "gold" ELSE NULL END AS "Athletics", 
+            CASE WHEN "sport" = 'Swimming' THEN "gold" ELSE NULL END AS "Swimming"
+            FROM medals
+            GROUP BY "country"
+            OFFSET ? ROWS
+            FETCH NEXT ? ROWS ONLY
+                """;
+    
+        final var actualSQL = jooqQuery.query().getSQL();
+        final var expectedParams = List.of(request.startRow(), request.endRow() - request.startRow());
+        assertThat(actualSQL).isEqualToIgnoringWhitespace(expectedSQL);
+        assertThat(jooqQuery.bindValues()).isEqualTo(expectedParams);
+    }
+
 }

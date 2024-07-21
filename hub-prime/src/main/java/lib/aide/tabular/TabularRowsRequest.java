@@ -32,7 +32,9 @@ public record TabularRowsRequest(
         List<SortModel> sortModel,
         Map<String, Object> requestContext,
         List<RangeSelection> rangeSelection,
-        List<AggregationFunction> aggregationFunctions
+        List<AggregationFunction> aggregationFunctions,
+        Map<String, List<String>> pivotValues
+
 ) {
     /**
      * Record representing a column definition.

@@ -1,22 +1,31 @@
 package lib.aide.tabular;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.jooq.CaseConditionStep;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Query;
+import org.jooq.SelectJoinStep;
+import org.jooq.SelectSelectStep;
 import org.jooq.SortField;
 import org.jooq.Table;
 import org.jooq.conf.RenderKeywordCase;
 import org.jooq.conf.RenderQuotedNames;
 import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
+import org.jooq.impl.SQLDataType;
 import org.slf4j.Logger;
+
+import com.google.common.collect.Sets;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import lib.aide.tabular.TabularRowsRequest.ColumnVO;
 
 public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSupplier.JooqProvenance> {
     public static record TypableTable(Table<?> table, boolean stronglyTyped) {
@@ -59,6 +68,8 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
     public record JooqProvenance(String fromSQL, List<Object> bindValues, boolean stronglyTyped) {
     }
+
+
 
     private final TabularRowsRequest request;
     private final TypableTable typableTable;
@@ -117,11 +128,12 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         final var bindValues = new ArrayList<Object>();
         final var sortFields = new ArrayList<SortField<?>>();
         final var groupByFields = new ArrayList<Field<?>>();
-
+        final var pivotFields = new ArrayList<Field<?>>();
+    
         // Adding columns to select
         if (request.valueCols() != null)
             request.valueCols().forEach(col -> selectFields.add(typableTable.column(col.field())));
-
+    
         // Adding filters
         if (request.filterModel() != null)
             request.filterModel().forEach((field, filter) -> {
@@ -129,7 +141,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 whereConditions.add(condition);
                 bindValues.add(filter.filter());
             });
-
+    
         // Adding sorting
         if (request.sortModel() != null)
             for (final var sort : request.sortModel()) {
@@ -139,7 +151,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                     case "desc" -> sortFields.add(sortField.desc());
                 }
             }
-
+    
         // Adding grouping
         if (request.rowGroupCols() != null)
             request.rowGroupCols().forEach(col -> {
@@ -147,7 +159,7 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                 groupByFields.add(field);
                 selectFields.add(field);
             });
-
+    
         // Adding aggregations
         if (request.aggregationFunctions() != null)
             request.aggregationFunctions().forEach(aggFunc -> {
@@ -158,13 +170,61 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
                         case "avg" -> DSL.avg(field.cast(Double.class));
                         case "count" -> DSL.count(field);
                         default ->
-                            throw new IllegalArgumentException(
-                                    "Unknown aggregation function: " + aggFunc.functionName());
+                                throw new IllegalArgumentException(
+                                        "Unknown aggregation function: " + aggFunc.functionName());
                     };
                     selectFields.add(aggregationField);
                 });
             });
+            
+            //Add Pivot
+        if (request.pivotMode() && !request.pivotCols().isEmpty()) {
+            ColumnVO pivotColumn = request.pivotCols().get(0);
+            String pivotField = pivotColumn.field();
+            String valueField = request.valueCols().get(1).field(); 
+            String groupByField = request.valueCols().get(0).field(); 
 
+            // Keep existing select fields, but remove the pivot and value fields
+            selectFields.removeIf(field -> field.getName().equals(pivotField) || field.getName().equals(valueField));
+
+            // Ensure the groupByField is in the select fields
+            if (selectFields.stream().noneMatch(field -> field.getName().equals(groupByField))) {
+                selectFields.add(0, typableTable.column(groupByField));
+            }
+
+            // Extract pivot values from the displayName of the pivot column
+            List<String> pivotValues = Arrays.asList(pivotColumn.displayName().split(","));
+
+            for (String pivotValue : pivotValues) {
+                Field<?> pivotedField = DSL.case_()
+                                        .when(typableTable.column(pivotField).eq(DSL.inline(pivotValue.trim())), typableTable.column(valueField))
+                                        .else_(DSL.inline((Object) null))
+                                        .as(pivotValue.trim());
+                selectFields.add(pivotedField);
+            }
+
+            // Update grouping fields
+            groupByFields.clear();
+            groupByFields.addAll(selectFields.stream()
+                                .filter(field -> !pivotValues.contains(field.getName()))
+                                .collect(Collectors.toList()));
+        } else {
+            // If not in pivot mode, keep the existing logic
+            if (request.rowGroupCols() != null) {
+                request.rowGroupCols().forEach(col -> {
+                    Field<?> field = typableTable.column(col.field());
+                    if (!groupByFields.contains(field)) {
+                        groupByFields.add(field);
+                    }
+                    if (!selectFields.contains(field)) {
+                        selectFields.add(field);
+                    }
+                });
+            }
+        }
+
+        
+    
         // Creating the base query
         final var limit = request.endRow() - request.startRow();
         final var select = groupByFields.isEmpty()
@@ -176,8 +236,31 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
         bindValues.add(request.startRow());
         bindValues.add(limit);
-
         return new JooqQuery(select, bindValues, typableTable.stronglyTyped);
+    }
+
+    private List<String> getPivotValues(TabularRowsRequest request) {
+        if (request.pivotCols().isEmpty()) {
+            System.out.println("No pivot columns found");
+            return Collections.emptyList();
+        }
+        
+        ColumnVO pivotColumn = request.pivotCols().get(0);
+        
+        // Check if pivotValues are provided in the request
+        if (request.pivotValues() != null && !request.pivotValues().isEmpty()) {
+            System.out.println("Using pivotValues from request");
+            return new ArrayList<>(request.pivotValues().get(pivotColumn.field()));
+        }
+        
+        // If not, try to use the displayName
+        if (pivotColumn.displayName() != null && !pivotColumn.displayName().isEmpty()) {
+            System.out.println("Using displayName for pivot values");
+            return Arrays.asList(pivotColumn.displayName().split(","));
+        }
+        
+        System.out.println("No pivot values found");
+        return Collections.emptyList();
     }
 
     private Condition createCondition(final String field, final TabularRowsRequest.FilterModel filter) {
@@ -194,10 +277,14 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
         };
     }
 
+    
+    
+
     public static final class Builder {
         private TabularRowsRequest request;
         private TypableTable table;
         private DSLContext dsl;
+        private Map<String, List<String>> pivotValues;
         private boolean includeGeneratedSqlInResp;
         private boolean includeGeneratedSqlInErrorResp;
         private Logger logger;
@@ -232,6 +319,11 @@ public final class JooqRowsSupplier implements TabularRowsSupplier<JooqRowsSuppl
 
         public Builder includeGeneratedSqlInErrorResp(boolean flag) {
             this.includeGeneratedSqlInErrorResp = flag;
+            return this;
+        }
+
+        public Builder withPivotValues(Map<String, List<String>> pivotValues) {
+            this.pivotValues = pivotValues;
             return this;
         }
 
